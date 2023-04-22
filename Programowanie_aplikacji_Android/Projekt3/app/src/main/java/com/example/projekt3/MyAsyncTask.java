@@ -3,56 +3,78 @@ package com.example.projekt3;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class MyAsyncTask extends AsyncTask<Void, Void, String[]> {
+import javax.net.ssl.HttpsURLConnection;
 
-    private Context mContext;
-    private String mUrl;
-    private AsyncTaskListener mListener;
+public class MyAsyncTask extends AsyncTask<String, Integer, String> {
 
-    public MyAsyncTask(Context context, String url, AsyncTaskListener listener) {
-        mContext = context;
-        mUrl = url;
-        mListener = listener;
+    private MainActivity mainActivity;
+    private String typPliku;
+    private int rozmiarPliku;
+
+    public MyAsyncTask(MainActivity activity) {
+        this.mainActivity = activity;
+        this.typPliku = null;
+        this.rozmiarPliku = 0;
     }
 
     @Override
-    protected String[] doInBackground(Void... voids) {
-        String[] result = new String[2];
+    protected String doInBackground(String... urls) {
+        HttpsURLConnection polaczenie = null;
+        FileOutputStream strumienDoPliku = null;
+        InputStream StrumienZSieci = null;
         try {
-            // Nawiązanie połączenia z serwerem i odczyt informacji o pliku
-            HttpURLConnection connection = (HttpURLConnection) new URL(mUrl).openConnection();
-            connection.setRequestMethod("HEAD");
-            connection.connect();
-            String contentType = connection.getContentType();
-            long contentLength = connection.getContentLengthLong();
-            connection.disconnect();
+            URL url = new URL(urls[0]);
+            polaczenie = (HttpsURLConnection) url.openConnection();
+            polaczenie.setRequestMethod("GET");
 
-            // Przekazanie informacji o pliku do metody onPostExecute()
-            result[0] = contentType;
-            result[1] = String.valueOf(contentLength);
-            return result;
-        } catch (IOException e) {
+            rozmiarPliku = polaczenie.getContentLength();
+            typPliku = polaczenie.getContentType();
+
+            if (StrumienZSieci != null)
+            {
+                try {
+                    StrumienZSieci.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            //odbieranie danych, zamykanie plików i połączenia..
+        } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
-    }
+        finally {
+            if (polaczenie != null) polaczenie.disconnect();
+        }
 
+        //w trakcie wykonania zadania można wysłać informację o postępie
+        //argumentem publishProgress też jest Integer.. params - stąd "dziwny" argument
+        //publishProgress(new Integer[] {i+1});
+
+        //po zakończeniu zadania zwracamy wynik
+        return null;
+    }
     @Override
-    protected void onPostExecute(String[] result) {
-        if (result != null) {
-            // Wyświetlenie informacji o pliku
-            String contentType = result[0];
-            long contentLength = Long.parseLong(result[1]);
-            mListener.onTaskCompleted(contentType, contentLength);
-        } else {
-            Toast.makeText(mContext, "Błąd pobierania informacji", Toast.LENGTH_SHORT).show();
-        }
+    protected void onProgressUpdate(Integer... values)
+    {
+        //aktualizacja informacji o postępie
+    }
+    @Override
+    protected void onPostExecute(String string)
+    {
+        super.onPostExecute(string);
+        this.mainActivity.ustawRozmiar(String.valueOf(rozmiarPliku));
+        this.mainActivity.ustawTyp(typPliku);
     }
 }
 
