@@ -1,0 +1,163 @@
+package com.example.projekt2;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView1;
+    private TextView textView2;
+    private static final String TAG = "MainActivity";
+    private PhoneViewModel mPhoneViewModel;
+    private ListAdapter mListAdapter;
+
+    ActivityResultLauncher<Intent> activityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    Log.d(TAG, "onActivityResult: ");
+
+                    if(result.getResultCode()==78){
+                        Intent intent = result.getData();
+                        Log.d(TAG, "onActivityResult with RESULT_OK");
+                        if(intent != null){
+                            String manufacturer = intent.getStringExtra("Manufacturer");
+                            String model = intent.getStringExtra("Model");
+                            String version = intent.getStringExtra("Android version");
+                            String web = intent.getStringExtra("Web site");
+                            Phone phone = new Phone(model, manufacturer, model, version, web);
+                            mPhoneViewModel.insert(phone);
+                            mPhoneViewModel.getAllPhones();
+                        }
+                    }
+                }
+            }
+    );
+
+    int [] idProducers = {R.id.producer1, R.id.producer2, R.id.producer3, R.id.producer4, R.id.producer5};
+    int [] idModels = {R.id.model1, R.id.model2, R.id.model3, R.id.model4, R.id.model5};
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        FloatingActionButton insertButton = findViewById(R.id.insert);
+        mPhoneViewModel = new ViewModelProvider(this).get(PhoneViewModel.class);
+
+
+
+        mPhoneViewModel.getAllPhones().observe(this, new Observer<List<Phone>>() {
+            @Override
+            public void onChanged(List<Phone> phones) {
+                if (phones.isEmpty()) { // jeśli lista jest pusta
+                    for (int i=0; i<idProducers.length; i++) { // wyczyść pola widoku
+                        TextView producer = findViewById(idProducers[i]);
+                        TextView model = findViewById(idModels[i]);
+                        producer.setText("");
+                        model.setText("");
+                    }} else{
+                for (int i=0; i<phones.size(); i++) {
+                    if(phones.size()>5){ break;}
+                    Phone phone = phones.get(i);
+                    //phoneProducers.append(phone.getPhoneProducer()).append("\n");
+                    //phoneModels.append(phone.getPhoneName()).append("\n");
+                    TextView producer = findViewById(idProducers[i]);
+                    TextView model = findViewById(idModels[i]);
+                    producer.setVisibility(View.VISIBLE);
+                    model.setVisibility(View.VISIBLE);
+                    producer.setText(phone.getPhoneProducer());
+                    model.setText(phone.getPhoneModel());
+                }
+                //textView1.setText(phoneProducers.toString());
+                //textView2.setText(phoneModels.toString());
+            }}
+        });
+
+        insertButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                Intent intent = new Intent(MainActivity.this, InsertActivity.class);
+                activityLauncher.launch(intent);
+            }
+        });
+
+
+
+        ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                // Obsługa przesuwania elementu na liście
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Obsługa usunięcia elementu z listy
+                int position = viewHolder.getAdapterPosition();
+                //mPhoneViewModel.delete(mPhoneAdapter.getPhoneAt(position));
+            }
+        };
+/*
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+        mListAdapter = new ListAdapter();
+        recyclerView.setAdapter(mListAdapter);
+*/
+        mPhoneViewModel.getAllPhones().observe(this, new Observer<List<Phone>>() {
+            @Override
+            public void onChanged(List<Phone> phones) {
+                //mListAdapter.submitList(phones);
+            }
+        });
+    }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.delete){
+            mPhoneViewModel.deleteAll();
+            mPhoneViewModel.getAllPhones();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+
+
+}

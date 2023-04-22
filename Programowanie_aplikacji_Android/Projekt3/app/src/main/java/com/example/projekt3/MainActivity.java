@@ -1,11 +1,5 @@
 package com.example.projekt3;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,12 +7,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MainActivity extends Activity {
 
@@ -43,10 +40,10 @@ public class MainActivity extends Activity {
 
             Bundle bundle = intent.getExtras();
             postep = bundle.getParcelable(DownloadIntentService.INFO);
-            download_status = (TextView) findViewById(R.id.download_status);
+            download_status = findViewById(R.id.download_status);
             String pobrane = Integer.toString(postep.mPobranychBajtow);
-            sizeText = (TextView) findViewById(R.id.size);
-            ProgressBar progres = (ProgressBar) findViewById(R.id.progressBar);
+            sizeText = findViewById(R.id.size);
+            ProgressBar progres = findViewById(R.id.progressBar);
             String size = Integer.toString(postep.mRozmiar);
             procentPobrania = 100.0f * postep.mPobranychBajtow/postep.mRozmiar;
             status = postep.mStatus;
